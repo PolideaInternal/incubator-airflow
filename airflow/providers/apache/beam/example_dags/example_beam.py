@@ -201,7 +201,7 @@ with models.DAG(
         py_file='apache_beam.examples.wordcount',
         py_options=['-m'],
         job_name='{{task.task_id}}',
-        py_requirements=['apache-beam[gcp]==2.21.0'],
+        py_requirements=['apache-beam[gcp]==2.25.0'],
         py_interpreter='python3',
         py_system_site_packages=False,
     )
@@ -211,7 +211,7 @@ with models.DAG(
         py_file=GCS_PYTHON,
         py_options=[],
         job_name='{{task.task_id}}',
-        py_requirements=['apache-beam[gcp]==2.21.0'],
+        py_requirements=['apache-beam[gcp]==2.25.0'],
         py_interpreter='python3',
         py_system_site_packages=False,
     )
@@ -227,7 +227,7 @@ with models.DAG(
         },
         py_options=[],
         job_name='{{task.task_id}}',
-        py_requirements=['apache-beam[gcp]==2.21.0'],
+        py_requirements=['apache-beam[gcp]==2.25.0'],
         py_interpreter='python3',
         py_system_site_packages=False,
     )
@@ -238,7 +238,7 @@ with models.DAG(
         runner="SparkRunner",
         py_options=['-m'],
         job_name='{{task.task_id}}',
-        py_requirements=['apache-beam[gcp]==2.21.0'],
+        py_requirements=['apache-beam[gcp]==2.25.0'],
         py_interpreter='python3',
         py_system_site_packages=False,
     )
@@ -252,7 +252,7 @@ with models.DAG(
         pipeline_options={
             'output': '/tmp/start_python_job_local_flink_runner',
         },
-        py_requirements=['apache-beam[gcp]==2.21.0'],
+        py_requirements=['apache-beam[gcp]==2.25.0'],
         py_interpreter='python3',
         py_system_site_packages=False,
     )
