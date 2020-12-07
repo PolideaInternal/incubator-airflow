@@ -17,6 +17,7 @@
 #
 
 import copy
+import subprocess
 import unittest
 from unittest import mock
 from unittest.mock import MagicMock
@@ -206,11 +207,12 @@ class TestBeamHook(unittest.TestCase):
         wait_for_done.assert_called_once_with()
 
 
-class TestDataflow(unittest.TestCase):
+class TestBeamRunner(unittest.TestCase):
     @mock.patch('airflow.providers.apache.beam.hooks.beam._BeamRunner.log')
     @mock.patch('subprocess.Popen')
     @mock.patch('select.select')
     def test_beam_wait_for_done_logging(self, mock_select, mock_popen, mock_logging):
+        cmd = ['test', 'cmd']
         mock_logging.info = MagicMock()
         mock_logging.warning = MagicMock()
         mock_proc = MagicMock()
@@ -228,6 +230,13 @@ class TestDataflow(unittest.TestCase):
         mock_proc_poll.side_effect = [None, poll_resp_error]
         mock_proc.poll = mock_proc_poll
         mock_popen.return_value = mock_proc
-        dataflow = _BeamRunner(['test', 'cmd'])
-        mock_logging.info.assert_called_once_with('Running command: %s', 'test cmd')
-        self.assertRaises(Exception, dataflow.wait_for_done)
+        beam = _BeamRunner(cmd)
+        mock_logging.info.assert_called_once_with('Running command: %s', " ".join(cmd))
+        mock_popen.assert_called_once_with(
+            cmd,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=True,
+        )
+        self.assertRaises(Exception, beam.wait_for_done)
