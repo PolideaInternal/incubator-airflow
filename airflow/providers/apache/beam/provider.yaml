@@ -19,7 +19,7 @@
 package-name: apache-airflow-providers-apache-beam
 name: Apache Beam
 description: |
-    `Apache Druid <https://druid.apache.org/>`__.
+    `Apache Beam <https://beam.apache.org/>`__.
 
 versions:
   - 0.0.1
@@ -30,11 +30,11 @@ integrations:
     tags: [apache]
 
 operators:
-  - integration-name: Apache Druid
+  - integration-name: Apache Beam
     python-modules:
       - airflow.providers.apache.beam.operators.beam
 
 hooks:
-  - integration-name: Apache Druid
+  - integration-name: Apache Beam
     python-modules:
       - airflow.providers.apache.beam.hooks.beam
