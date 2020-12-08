@@ -24,6 +24,7 @@ ALL_PROVIDERS = [
     'apache-airflow-providers-amazon',
     'apache-airflow-providers-apache-beam',
     'apache-airflow-providers-apache-cassandra',
+    'apache-airflow-providers-apache-beam',
     'apache-airflow-providers-apache-druid',
     'apache-airflow-providers-apache-hdfs',
     'apache-airflow-providers-apache-hive',

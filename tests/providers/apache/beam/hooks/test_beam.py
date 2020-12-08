@@ -25,7 +25,7 @@ from unittest.mock import MagicMock
 from parameterized import parameterized
 
 from airflow.exceptions import AirflowException
-from airflow.providers.apache.beam.hooks.beam import BeamHook, _BeamRunner
+from airflow.providers.apache.beam.hooks.beam import BeamCommandRunner, BeamHook
 
 PY_FILE = 'apache_beam.examples.wordcount'
 JAR_FILE = 'unitest.jar'
@@ -54,7 +54,7 @@ INFO: To cancel the job using the 'gcloud' tool, run:
 
 
 class TestBeamHook(unittest.TestCase):
-    @mock.patch(BEAM_STRING.format('_BeamRunner'))
+    @mock.patch(BEAM_STRING.format('BeamCommandRunner'))
     def test_start_python_pipeline(self, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
@@ -84,7 +84,7 @@ class TestBeamHook(unittest.TestCase):
             ('minor_version', 'python3.6'),
         ]
     )
-    @mock.patch(BEAM_STRING.format('_BeamRunner'))
+    @mock.patch(BEAM_STRING.format('BeamCommandRunner'))
     def test_start_python_pipeline_with_custom_interpreter(self, _, py_interpreter, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
@@ -115,7 +115,7 @@ class TestBeamHook(unittest.TestCase):
         ]
     )
     @mock.patch(BEAM_STRING.format('prepare_virtualenv'))
-    @mock.patch(BEAM_STRING.format('_BeamRunner'))
+    @mock.patch(BEAM_STRING.format('BeamCommandRunner'))
     def test_start_python_pipeline_with_non_empty_py_requirements_and_without_system_packages(
         self, current_py_requirements, current_py_system_site_packages, mock_runner, mock_virtualenv
     ):
@@ -148,7 +148,7 @@ class TestBeamHook(unittest.TestCase):
             requirements=current_py_requirements,
         )
 
-    @mock.patch(BEAM_STRING.format('_BeamRunner'))
+    @mock.patch(BEAM_STRING.format('BeamCommandRunner'))
     def test_start_python_pipeline_with_empty_py_requirements_and_without_system_packages(self, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
@@ -164,7 +164,7 @@ class TestBeamHook(unittest.TestCase):
         mock_runner.assert_not_called()
         wait_for_done.assert_not_called()
 
-    @mock.patch(BEAM_STRING.format('_BeamRunner'))
+    @mock.patch(BEAM_STRING.format('BeamCommandRunner'))
     def test_start_java_pipeline(self, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
@@ -185,7 +185,7 @@ class TestBeamHook(unittest.TestCase):
         mock_runner.assert_called_once_with(cmd=expected_cmd)
         wait_for_done.assert_called_once_with()
 
-    @mock.patch(BEAM_STRING.format('_BeamRunner'))
+    @mock.patch(BEAM_STRING.format('BeamCommandRunner'))
     def test_start_java_pipeline_with_job_class(self, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
@@ -208,7 +208,7 @@ class TestBeamHook(unittest.TestCase):
 
 
 class TestBeamRunner(unittest.TestCase):
-    @mock.patch('airflow.providers.apache.beam.hooks.beam._BeamRunner.log')
+    @mock.patch('airflow.providers.apache.beam.hooks.beam.BeamCommandRunner.log')
     @mock.patch('subprocess.Popen')
     @mock.patch('select.select')
     def test_beam_wait_for_done_logging(self, mock_select, mock_popen, mock_logging):
@@ -230,7 +230,7 @@ class TestBeamRunner(unittest.TestCase):
         mock_proc_poll.side_effect = [None, poll_resp_error]
         mock_proc.poll = mock_proc_poll
         mock_popen.return_value = mock_proc
-        beam = _BeamRunner(cmd)
+        beam = BeamCommandRunner(cmd)
         mock_logging.info.assert_called_once_with('Running command: %s', " ".join(cmd))
         mock_popen.assert_called_once_with(
             cmd,

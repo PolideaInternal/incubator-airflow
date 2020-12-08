@@ -18,7 +18,6 @@
 #
 
 import copy
-import shlex
 import subprocess
 import unittest
 from typing import Any, Dict
@@ -36,7 +35,6 @@ from airflow.providers.google.cloud.hooks.dataflow import (
     DataflowJobStatus,
     DataflowJobType,
     _DataflowJobsController,
-    _DataflowRunner,
     _fallback_to_project_id_from_variables,
 )
 
@@ -616,7 +614,7 @@ class TestDataflowHook(unittest.TestCase):
     )
     @mock.patch(DATAFLOW_STRING.format('uuid.uuid4'), return_value=MOCK_UUID)
     def test_valid_dataflow_job_name(self, expected_result, job_name, append_job_name, mock_uuid4):
-        job_name = self.dataflow_hook._build_dataflow_job_name(
+        job_name = self.dataflow_hook.build_dataflow_job_name(
             job_name=job_name, append_job_name=append_job_name
         )
 
@@ -625,7 +623,7 @@ class TestDataflowHook(unittest.TestCase):
     @parameterized.expand([("1dfjob@",), ("dfjob@",), ("df^jo",)])
     def test_build_dataflow_job_name_with_invalid_value(self, job_name):
         with pytest.raises(ValueError):
-            self.dataflow_hook._build_dataflow_job_name(job_name=job_name, append_job_name=False)
+            self.dataflow_hook.build_dataflow_job_name(job_name=job_name, append_job_name=False)
 
     @mock.patch(DATAFLOW_STRING.format('_DataflowJobsController'))
     @mock.patch(DATAFLOW_STRING.format('DataflowHook.get_conn'))
@@ -1678,47 +1676,46 @@ navigate to https://console.cloud.google.com/dataflow/jobs/us-central1/{TEST_JOB
 """
 
 
-class TestDataflow(unittest.TestCase):
-    @parameterized.expand(
-        [
-            (APACHE_BEAM_V_2_14_0_JAVA_SDK_LOG,),
-            (APACHE_BEAM_V_2_22_0_JAVA_SDK_LOG,),
-            (APACHE_BEAM_V_2_14_0_PYTHON_SDK_LOG,),
-            (APACHE_BEAM_V_2_22_0_PYTHON_SDK_LOG,),
-        ],
-        name_func=lambda func, num, p: f"{func.__name__}_{num}",
-    )
-    def test_data_flow_valid_job_id(self, log):
-        echos = ";".join([f"echo {shlex.quote(line)}" for line in log.split("\n")])
-        cmd = ["bash", "-c", echos]
-        assert _DataflowRunner(cmd).wait_for_done() == TEST_JOB_ID
-
-    def test_data_flow_missing_job_id(self):
-        cmd = ['echo', 'unit testing']
-        assert _DataflowRunner(cmd).wait_for_done() is None
-
-    @mock.patch('airflow.providers.google.cloud.hooks.dataflow._DataflowRunner.log')
-    @mock.patch('subprocess.Popen')
-    @mock.patch('select.select')
-    def test_dataflow_wait_for_done_logging(self, mock_select, mock_popen, mock_logging):
-        mock_logging.info = MagicMock()
-        mock_logging.warning = MagicMock()
-        mock_proc = MagicMock()
-        mock_proc.stderr = MagicMock()
-        mock_proc.stderr.readlines = MagicMock(return_value=['test\n', 'error\n'])
-        mock_stderr_fd = MagicMock()
-        mock_proc.stderr.fileno = MagicMock(return_value=mock_stderr_fd)
-        mock_proc_poll = MagicMock()
-        mock_select.return_value = [[mock_stderr_fd]]
-
-        def poll_resp_error():
-            mock_proc.return_code = 1
-            return True
-
-        mock_proc_poll.side_effect = [None, poll_resp_error]
-        mock_proc.poll = mock_proc_poll
-        mock_popen.return_value = mock_proc
-        dataflow = _DataflowRunner(['test', 'cmd'])
-        mock_logging.info.assert_called_once_with('Running command: %s', 'test cmd')
-        with pytest.raises(Exception):
-            dataflow.wait_for_done()
+# class TestDataflow(unittest.TestCase):
+#     @parameterized.expand(
+#         [
+#             (APACHE_BEAM_V_2_14_0_JAVA_SDK_LOG,),
+#             (APACHE_BEAM_V_2_22_0_JAVA_SDK_LOG,),
+#             (APACHE_BEAM_V_2_14_0_PYTHON_SDK_LOG,),
+#             (APACHE_BEAM_V_2_22_0_PYTHON_SDK_LOG,),
+#         ],
+#         name_func=lambda func, num, p: f"{func.__name__}_{num}",
+#     )
+#     def test_data_flow_valid_job_id(self, log):
+#         echos = ";".join([f"echo {shlex.quote(line)}" for line in log.split("\n")])
+#         cmd = ["bash", "-c", echos]
+#         self.assertEqual(_DataflowRunner(cmd).wait_for_done(), TEST_JOB_ID)
+#
+#     def test_data_flow_missing_job_id(self):
+#         cmd = ['echo', 'unit testing']
+#         self.assertEqual(_DataflowRunner(cmd).wait_for_done(), None)
+#
+#     @mock.patch('airflow.providers.google.cloud.hooks.dataflow._DataflowRunner.log')
+#     @mock.patch('subprocess.Popen')
+#     @mock.patch('select.select')
+#     def test_dataflow_wait_for_done_logging(self, mock_select, mock_popen, mock_logging):
+#         mock_logging.info = MagicMock()
+#         mock_logging.warning = MagicMock()
+#         mock_proc = MagicMock()
+#         mock_proc.stderr = MagicMock()
+#         mock_proc.stderr.readlines = MagicMock(return_value=['test\n', 'error\n'])
+#         mock_stderr_fd = MagicMock()
+#         mock_proc.stderr.fileno = MagicMock(return_value=mock_stderr_fd)
+#         mock_proc_poll = MagicMock()
+#         mock_select.return_value = [[mock_stderr_fd]]
+#
+#         def poll_resp_error():
+#             mock_proc.return_code = 1
+#             return True
+#
+#         mock_proc_poll.side_effect = [None, poll_resp_error]
+#         mock_proc.poll = mock_proc_poll
+#         mock_popen.return_value = mock_proc
+#         dataflow = _DataflowRunner(['test', 'cmd'])
+#         mock_logging.info.assert_called_once_with('Running command: %s', 'test cmd')
+#         self.assertRaises(Exception, dataflow.wait_for_done)
