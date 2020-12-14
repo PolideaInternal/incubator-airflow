@@ -149,6 +149,7 @@ class BeamHook(BaseHook):
     ):
         """
         Starts Apache Beam python pipeline.
+
         :param variables: Variables passed to the pipeline.
         :type variables: Dict
         :param py_options: Additional options.
