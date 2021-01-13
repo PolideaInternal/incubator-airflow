@@ -25,7 +25,7 @@ from unittest.mock import MagicMock
 from parameterized import parameterized
 
 from airflow.exceptions import AirflowException
-from airflow.providers.apache.beam.hooks.beam import BeamCommandRunner, BeamHook
+from airflow.providers.apache.beam.hooks.beam import BeamCommandRunner, BeamHook, beam_options_to_args
 
 PY_FILE = 'apache_beam.examples.wordcount'
 JAR_FILE = 'unitest.jar'
@@ -58,11 +58,13 @@ class TestBeamHook(unittest.TestCase):
     def test_start_python_pipeline(self, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
+        process_line_callback = MagicMock()
 
         hook.start_python_pipeline(  # pylint: disable=no-value-for-parameter
             variables=copy.deepcopy(BEAM_VARIABLES_PY),
             py_file=PY_FILE,
             py_options=PY_OPTIONS,
+            process_line_callback=process_line_callback,
         )
 
         expected_cmd = [
@@ -73,7 +75,7 @@ class TestBeamHook(unittest.TestCase):
             '--output=gs://test/output',
             '--labels=foo=bar',
         ]
-        mock_runner.assert_called_once_with(cmd=expected_cmd)
+        mock_runner.assert_called_once_with(cmd=expected_cmd, process_line_callback=process_line_callback)
         wait_for_done.assert_called_once_with()
 
     @parameterized.expand(
@@ -88,12 +90,14 @@ class TestBeamHook(unittest.TestCase):
     def test_start_python_pipeline_with_custom_interpreter(self, _, py_interpreter, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
+        process_line_callback = MagicMock()
 
         hook.start_python_pipeline(  # pylint: disable=no-value-for-parameter
             variables=copy.deepcopy(BEAM_VARIABLES_PY),
             py_file=PY_FILE,
             py_options=PY_OPTIONS,
             py_interpreter=py_interpreter,
+            process_line_callback=process_line_callback,
         )
 
         expected_cmd = [
@@ -104,7 +108,7 @@ class TestBeamHook(unittest.TestCase):
             '--output=gs://test/output',
             '--labels=foo=bar',
         ]
-        mock_runner.assert_called_once_with(cmd=expected_cmd)
+        mock_runner.assert_called_once_with(cmd=expected_cmd, process_line_callback=process_line_callback)
         wait_for_done.assert_called_once_with()
 
     @parameterized.expand(
@@ -122,6 +126,7 @@ class TestBeamHook(unittest.TestCase):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
         mock_virtualenv.return_value = '/dummy_dir/bin/python'
+        process_line_callback = MagicMock()
 
         hook.start_python_pipeline(  # pylint: disable=no-value-for-parameter
             variables=copy.deepcopy(BEAM_VARIABLES_PY),
@@ -129,6 +134,7 @@ class TestBeamHook(unittest.TestCase):
             py_options=PY_OPTIONS,
             py_requirements=current_py_requirements,
             py_system_site_packages=current_py_system_site_packages,
+            process_line_callback=process_line_callback,
         )
 
         expected_cmd = [
@@ -139,7 +145,7 @@ class TestBeamHook(unittest.TestCase):
             '--output=gs://test/output',
             '--labels=foo=bar',
         ]
-        mock_runner.assert_called_once_with(cmd=expected_cmd)
+        mock_runner.assert_called_once_with(cmd=expected_cmd, process_line_callback=process_line_callback)
         wait_for_done.assert_called_once_with()
         mock_virtualenv.assert_called_once_with(
             venv_directory=mock.ANY,
@@ -152,6 +158,7 @@ class TestBeamHook(unittest.TestCase):
     def test_start_python_pipeline_with_empty_py_requirements_and_without_system_packages(self, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
+        process_line_callback = MagicMock()
 
         with self.assertRaisesRegex(AirflowException, "Invalid method invocation."):
             hook.start_python_pipeline(  # pylint: disable=no-value-for-parameter
@@ -159,6 +166,7 @@ class TestBeamHook(unittest.TestCase):
                 py_file=PY_FILE,
                 py_options=PY_OPTIONS,
                 py_requirements=[],
+                process_line_callback=process_line_callback,
             )
 
         mock_runner.assert_not_called()
@@ -168,10 +176,12 @@ class TestBeamHook(unittest.TestCase):
     def test_start_java_pipeline(self, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
+        process_line_callback = MagicMock()
 
         hook.start_java_pipeline(  # pylint: disable=no-value-for-parameter
             jar=JAR_FILE,
             variables=copy.deepcopy(BEAM_VARIABLES_JAVA),
+            process_line_callback=process_line_callback,
         )
 
         expected_cmd = [
@@ -182,16 +192,20 @@ class TestBeamHook(unittest.TestCase):
             '--output=gs://test/output',
             '--labels={"foo":"bar"}',
         ]
-        mock_runner.assert_called_once_with(cmd=expected_cmd)
+        mock_runner.assert_called_once_with(cmd=expected_cmd, process_line_callback=process_line_callback)
         wait_for_done.assert_called_once_with()
 
     @mock.patch(BEAM_STRING.format('BeamCommandRunner'))
     def test_start_java_pipeline_with_job_class(self, mock_runner):
         hook = BeamHook(runner=DEFAULT_RUNNER)
         wait_for_done = mock_runner.return_value.wait_for_done
+        process_line_callback = MagicMock()
 
         hook.start_java_pipeline(  # pylint: disable=no-value-for-parameter
-            jar=JAR_FILE, variables=copy.deepcopy(BEAM_VARIABLES_JAVA), job_class=JOB_CLASS
+            jar=JAR_FILE,
+            variables=copy.deepcopy(BEAM_VARIABLES_JAVA),
+            job_class=JOB_CLASS,
+            process_line_callback=process_line_callback,
         )
 
         expected_cmd = [
@@ -203,7 +217,7 @@ class TestBeamHook(unittest.TestCase):
             '--output=gs://test/output',
             '--labels={"foo":"bar"}',
         ]
-        mock_runner.assert_called_once_with(cmd=expected_cmd)
+        mock_runner.assert_called_once_with(cmd=expected_cmd, process_line_callback=process_line_callback)
         wait_for_done.assert_called_once_with()
 
 
@@ -240,3 +254,18 @@ class TestBeamRunner(unittest.TestCase):
             close_fds=True,
         )
         self.assertRaises(Exception, beam.wait_for_done)
+
+
+class TestBeamOptionsToArgs(unittest.TestCase):
+    @parameterized.expand(
+        [
+            ({"key": "val"}, ["--key=val"]),
+            ({"key": None}, ["--key"]),
+            ({"key": True}, ["--key"]),
+            ({"key": False}, ["--key=False"]),
+            ({"key": ["a", "b", "c"]}, ["--key=a", "--key=b", "--key=c"]),
+        ]
+    )
+    def test_beam_options_to_args(self, options, expected_args):
+        args = beam_options_to_args(options)
+        assert args == expected_args

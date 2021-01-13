@@ -605,7 +605,7 @@ class DataflowHook(GoogleBaseHook):
             job_class=job_class,
             process_line_callback=process_line_and_extract_dataflow_job_id_callback(on_new_job_id_callback),
         )
-        self.wait_for_done(
+        self.wait_for_done(  # pylint: disable=no-value-for-parameter
             job_name=name,
             location=location,
             job_id=self.job_id,
@@ -836,7 +836,7 @@ class DataflowHook(GoogleBaseHook):
         :type location: str
         """
         warnings.warn(
-            """"This method is deprecated.
+            """This method is deprecated.
             Please use `airflow.providers.apache.beam.hooks.beam.start.start_python_pipeline`
             to start pipeline and `providers.google.cloud.hooks.dataflow.DataflowHook.wait_for_done`
             to wait for the required pipeline state.
@@ -860,7 +860,7 @@ class DataflowHook(GoogleBaseHook):
             process_line_callback=process_line_and_extract_dataflow_job_id_callback(on_new_job_id_callback),
         )
 
-        self.wait_for_done(
+        self.wait_for_done(  # pylint: disable=no-value-for-parameter
             job_name=name,
             location=location,
             job_id=self.job_id,
@@ -1146,8 +1146,14 @@ class DataflowHook(GoogleBaseHook):
         )
         return jobs_controller.fetch_job_autoscaling_events_by_id(job_id)
 
+    @GoogleBaseHook.fallback_to_default_project_id
     def wait_for_done(
-        self, job_name: str, location: str, job_id: Optional[str] = None, multiple_jobs: bool = False
+        self,
+        job_name: str,
+        location: str,
+        project_id: str,
+        job_id: Optional[str] = None,
+        multiple_jobs: bool = False,
     ) -> None:
         """
         Wait for Dataflow job.
@@ -1158,6 +1164,9 @@ class DataflowHook(GoogleBaseHook):
         :type job_name: str
         :param location: location the job is running
         :type location: str
+        :param project_id: Optional, the Google Cloud project ID in which to start a job.
+            If set to None or missing, the default project_id from the Google Cloud connection is used.
+        :type project_id:
         :param job_id: a Dataflow job ID
         :type job_id: str
         :param multiple_jobs: If pipeline creates multiple jobs then monitor all jobs
@@ -1165,7 +1174,7 @@ class DataflowHook(GoogleBaseHook):
         """
         job_controller = _DataflowJobsController(
             dataflow=self.get_conn(),
-            project_number=self.project_id,
+            project_number=project_id,
             name=job_name,
             location=location,
             poll_sleep=self.poll_sleep,

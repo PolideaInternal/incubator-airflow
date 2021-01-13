@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """This module contains Google Dataflow operators."""
-
+import copy
 import re
 from abc import ABCMeta
 from contextlib import ExitStack
@@ -334,9 +334,9 @@ class DataflowCreateJavaJobOperator(BaseOperator):
             wait_until_finished=self.wait_until_finished,
         )
         job_name = self.dataflow_hook.build_dataflow_job_name(job_name=self.job_name)
-        pipeline_options = self.dataflow_default_options.copy()
+        pipeline_options = copy.deepcopy(self.dataflow_default_options)
 
-        pipeline_options["jobName"] = job_name
+        pipeline_options["jobName"] = self.job_name
         pipeline_options["project"] = self.project_id or self.dataflow_hook.project_id
         pipeline_options["region"] = self.location
         pipeline_options.update(self.options)
@@ -368,13 +368,14 @@ class DataflowCreateJavaJobOperator(BaseOperator):
                             variables=pipeline_options,
                         )
                     )
-                    while is_running:
+                    while is_running and self.check_if_running == CheckJobRunning.WaitForRun:
                         # pylint: disable=no-value-for-parameter
                         is_running = self.dataflow_hook.is_job_dataflow_running(
                             name=self.job_name,
                             variables=pipeline_options,
                         )
                 if not is_running:
+                    pipeline_options["jobName"] = job_name
                     self.beam_hook.start_java_pipeline(
                         variables=pipeline_options,
                         jar=self.jar,
