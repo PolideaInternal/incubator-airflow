@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import json
 import unittest
 
 from parameterized import parameterized
@@ -119,6 +120,7 @@ class TestGetConnection(TestConnectionEndpoint):
             login='login',
             schema='testschema',
             port=80,
+            extra=json.dumps({"test-key": "text-content", "test-second-key": "second-content"}),
         )
         session.add(connection_model)
         session.commit()
@@ -137,6 +139,7 @@ class TestGetConnection(TestConnectionEndpoint):
                 "login": 'login',
                 'schema': 'testschema',
                 'port': 80,
+                'extra': '{"test-key": "text-content", "test-second-key": "second-content"}',
             },
         )
 
