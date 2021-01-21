@@ -113,7 +113,7 @@ class StackdriverTaskHandler(logging.Handler):
 
     @property
     def _client(self) -> gcp_logging.Client:
-        """Google Cloud Library API client"""
+        """The Cloud Library API client"""
         credentials, project = self._credentials_and_project
         client = gcp_logging.Client(
             credentials=credentials,
@@ -124,8 +124,7 @@ class StackdriverTaskHandler(logging.Handler):
 
     @property
     def _logging_service_client(self) -> LoggingServiceV2Client:
-        """Google Cloud Library API client"""
-
+        """The Cloud logging service v2 client."""
         credentials, _ = self._credentials_and_project
         client = LoggingServiceV2Client(
             credentials=credentials,
